@@ -1,128 +1,247 @@
+// ============================================================
+//  ICS 2276: Computer Programming II
+//  Agricultural Supply Chain System
+//  Milestone 1: Computational Foundations
+// ============================================================
+
 #include <iostream>
 #include <string>
 #include <iomanip>
-#include <windows.h> // For Sleep() to simulate the flow of time
 
 using namespace std;
 
 // ============================================================
-// STAGE 1: THE UPSTREAM (Production & Environment)
-// Focus: Milestone 1 Requirements (State variables & Math)
+//  SYSTEM STATE VARIABLES (Real-world to variable mapping)
 // ============================================================
-class FarmProduction {
-private:
-    string cropType;
-    float temperature;
-    float soilMoisture;
-    bool landReady;
-    bool inputsApplied; // Fertilizer/Pesticides
 
-public:
-    FarmProduction(string crop, float temp) 
-        : cropType(crop), temperature(temp), soilMoisture(10.0), landReady(false), inputsApplied(false) {}
+// --- Product Information ---
+string productName;
+int    productID;
+string productCategory;   // e.g., "Grain", "Vegetable", "Fruit"
+double unitPrice;         // price per unit (KES)
 
-    void prepareLand() {
-        cout << "\n[1. PRODUCTION] Preparing land plots for " << cropType << "..." << endl;
-        Sleep(1000); landReady = true;
-        cout << " >> Status: Land is Tilled and Ready." << endl;
-    }
+// --- Inventory / Warehouse ---
+int    quantityInStock;   // current units available
+int    warehouseCapacity; // max units warehouse can hold
+int    reorderLevel;      // minimum stock before reorder is triggered
 
-    void applyInputs() {
-        if (!landReady) return;
-        cout << "[2. INPUTS] Applying Fertilizer and seeds..." << endl;
-        Sleep(1000); inputsApplied = true;
-    }
+// --- Supplier Information ---
+string supplierName;
+string supplierLocation;
 
-    // Decision Logic: Irrigation based on Temperature (Milestone 2)
-    void runClimateControl() {
-        cout << "[3. CLIMATE] Monitoring Juja Sensors... Temp: " << temperature << "C" << endl;
-        if (temperature > 29.0) {
-            cout << " >> Action: High Heat! Automated Irrigation ACTIVE." << endl;
-            soilMoisture = 85.0;
-        } else {
-            cout << " >> Action: Moderate Climate. Standard Irrigation applied." << endl;
-            soilMoisture = 45.0;
-        }
-    }
+// --- Computed / Derived Variables ---
+double totalInventoryValue;   // quantityInStock * unitPrice
+double stockPercentage;       // (quantityInStock / warehouseCapacity) * 100
+bool   reorderNeeded;         // true if quantityInStock <= reorderLevel
 
-    int harvest() {
-        cout << "[4. HARVEST] Harvesting " << cropType << "..." << endl;
-        Sleep(1500);
-        // Math logic: Yield depends on moisture levels
-        return (soilMoisture > 50) ? 2500 : 1200; 
-    }
-};
 
 // ============================================================
-// STAGE 2: THE DOWNSTREAM (Logistics & Distribution)
-// Focus: Milestone 2 Requirements (Classes & Decision Systems)
+//  FUNCTION DECLARATIONS
 // ============================================================
-class SupplyChainLogistics {
-private:
-    int warehouseStock;
-    double unitPrice;
+void  displayWelcomeBanner();
+void  initializeSystem();
+void  computeMetrics();
+void  displayDashboard();
+void  runSimulation();
+void  displayMenu();
 
-public:
-    SupplyChainLogistics(double price) : warehouseStock(0), unitPrice(price) {}
-
-    // The "Flow" Point: Receiving the harvest
-    void receiveShipment(int amount) {
-        cout << "\n[5. LOGISTICS] Receiving truck from farm..." << endl;
-        Sleep(1000);
-        warehouseStock += amount;
-        cout << " >> Inventory Updated: +" << amount << "kg." << endl;
-    }
-
-    // Decision System: Approve or Reject Orders
-    void fulfillOrder(int requested) {
-        cout << "\n[6. DISTRIBUTION] Evaluating Order for " << requested << "kg..." << endl;
-        if (requested <= warehouseStock) {
-            warehouseStock -= requested;
-            cout << " >> Status: [ORDER APPROVED]. Dispatching to market." << endl;
-        } else {
-            cout << " >> Status: [REJECTED]. Reason: Insufficient Stock." << endl;
-        }
-    }
-
-    void displayReport() {
-        cout << "\n==========================================" << endl;
-        cout << "      FINAL AGRI-CHAIN STATUS REPORT" << endl;
-        cout << "==========================================" << endl;
-        cout << " Warehouse Stock: " << warehouseStock << " kg" << endl;
-        cout << " Current Value  : KES " << fixed << setprecision(2) << (warehouseStock * unitPrice) << endl;
-        cout << "==========================================" << endl;
-    }
-};
 
 // ============================================================
-// MAIN: The Master Flow Controller
+//  MAIN ENTRY POINT
 // ============================================================
 int main() {
-    cout << "--- AGRICULTURAL SUPPLY CHAIN SYSTEM START ---" << endl;
+    displayWelcomeBanner();
+    initializeSystem();
+    computeMetrics();
+    displayDashboard();
+    runSimulation();
 
-    // 1. Setup Phase
-    FarmProduction jujaFarm("Maize", 32.5); // Warm climate
-    SupplyChainLogistics nakuruHub(45.50); // Market pricing
-
-    // 2. The Flow: Stage 1 (Production)
-    jujaFarm.prepareLand();
-    jujaFarm.applyInputs();
-    jujaFarm.runClimateControl();
-    int cropYield = jujaFarm.harvest();
-
-    // 3. The Flow: Stage 2 (Logistics transition)
-    nakuruHub.receiveShipment(cropYield);
-    nakuruHub.displayReport();
-
-    // 4. The Flow: Stage 3 (Market Distribution)
-    int buyerDemand;
-    cout << "\nEnter Buyer Order Quantity (kg): ";
-    cin >> buyerDemand;
-    nakuruHub.fulfillOrder(buyerDemand);
-    
-    nakuruHub.displayReport();
-
-    cout << "\n[SYSTEM] Flow complete. Press any key to terminate simulation." << endl;
-    system("pause > nul");
+    cout << "\n[SYSTEM] Shutting down Agricultural Supply Chain System. Goodbye!\n";
     return 0;
+}
+
+
+// ============================================================
+//  WELCOME BANNER
+// ============================================================
+void displayWelcomeBanner() {
+    cout << "============================================================\n";
+    cout << "     AGRICULTURAL SUPPLY CHAIN SYSTEM v1.0\n";
+    cout << "     ICS 2276 | Milestone 1: Computational Foundations\n";
+    cout << "============================================================\n\n";
+}
+
+
+// ============================================================
+//  SYSTEM INITIALIZATION
+//  Hardcoded initial state to simulate a real farm product
+// ============================================================
+void initializeSystem() {
+    cout << "[INIT] Initializing system with default product data...\n\n";
+
+    // Product
+    productName      = "Maize";
+    productID        = 1001;
+    productCategory  = "Grain";
+    unitPrice        = 45.50;   // KES per kg
+
+    // Inventory
+    quantityInStock  = 320;     // kg
+    warehouseCapacity= 1000;    // kg
+    reorderLevel     = 100;     // kg
+
+    // Supplier
+    supplierName     = "Rift Valley Farms Ltd";
+    supplierLocation = "Nakuru, Kenya";
+}
+
+
+// ============================================================
+//  COMPUTE METRICS
+//  Basic arithmetic computations on system state
+// ============================================================
+void computeMetrics() {
+    totalInventoryValue = quantityInStock * unitPrice;
+    stockPercentage     = (static_cast<double>(quantityInStock) / warehouseCapacity) * 100.0;
+    reorderNeeded       = (quantityInStock <= reorderLevel);
+}
+
+
+// ============================================================
+//  DISPLAY DASHBOARD
+//  Shows current system snapshot
+// ============================================================
+void displayDashboard() {
+    cout << fixed << setprecision(2);
+
+    cout << "============================================================\n";
+    cout << "                   SYSTEM DASHBOARD\n";
+    cout << "============================================================\n";
+
+    cout << "\n  [PRODUCT]\n";
+    cout << "    ID       : " << productID        << "\n";
+    cout << "    Name     : " << productName      << "\n";
+    cout << "    Category : " << productCategory  << "\n";
+    cout << "    Unit Price: KES " << unitPrice   << " / kg\n";
+
+    cout << "\n  [SUPPLIER]\n";
+    cout << "    Name     : " << supplierName     << "\n";
+    cout << "    Location : " << supplierLocation << "\n";
+
+    cout << "\n  [WAREHOUSE / INVENTORY]\n";
+    cout << "    Capacity         : " << warehouseCapacity << " kg\n";
+    cout << "    Current Stock    : " << quantityInStock   << " kg\n";
+    cout << "    Reorder Level    : " << reorderLevel      << " kg\n";
+    cout << "    Stock Level      : " << stockPercentage   << "%\n";
+    cout << "    Inventory Value  : KES " << totalInventoryValue << "\n";
+
+    cout << "\n  [ALERTS]\n";
+    if (reorderNeeded) {
+        cout << "    *** REORDER ALERT: Stock is at or below reorder level! ***\n";
+    } else {
+        cout << "    Stock levels are sufficient. No reorder needed.\n";
+    }
+
+    cout << "============================================================\n\n";
+}
+
+
+// ============================================================
+//  MENU
+// ============================================================
+void displayMenu() {
+    cout << "\n---- MAIN MENU ----------------------------------------\n";
+    cout << "  1. Add stock (receive new shipment)\n";
+    cout << "  2. Dispatch stock (fulfill an order)\n";
+    cout << "  3. Update unit price\n";
+    cout << "  4. View dashboard\n";
+    cout << "  5. Exit\n";
+    cout << "-------------------------------------------------------\n";
+    cout << "  Enter choice: ";
+}
+
+
+// ============================================================
+//  SIMULATION LOOP
+//  Simple control flow: conditionals and loops
+// ============================================================
+void runSimulation() {
+    int    choice;
+    int    quantity;
+    double newPrice;
+    bool   running = true;
+
+    cout << "[SIM] Supply Chain Simulation Started.\n";
+
+    while (running) {
+        displayMenu();
+        cin >> choice;
+
+        // Input guard
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "  [ERROR] Invalid input. Please enter a number.\n";
+            continue;
+        }
+
+        if (choice == 1) {
+            // --- Add Stock ---
+            cout << "  Enter quantity to add (kg): ";
+            cin >> quantity;
+
+            if (quantity <= 0) {
+                cout << "  [ERROR] Quantity must be positive.\n";
+            } else if (quantityInStock + quantity > warehouseCapacity) {
+                cout << "  [WARNING] Addition exceeds warehouse capacity!\n";
+                cout << "  Available space: " << (warehouseCapacity - quantityInStock) << " kg\n";
+            } else {
+                quantityInStock += quantity;
+                computeMetrics();
+                cout << "  [OK] Stock updated. New stock: " << quantityInStock << " kg\n";
+            }
+
+        } else if (choice == 2) {
+            // --- Dispatch Stock ---
+            cout << "  Enter quantity to dispatch (kg): ";
+            cin >> quantity;
+
+            if (quantity <= 0) {
+                cout << "  [ERROR] Quantity must be positive.\n";
+            } else if (quantity > quantityInStock) {
+                cout << "  [ERROR] Insufficient stock! Available: " << quantityInStock << " kg\n";
+            } else {
+                quantityInStock -= quantity;
+                computeMetrics();
+                cout << "  [OK] Dispatched " << quantity << " kg. Remaining: " << quantityInStock << " kg\n";
+                if (reorderNeeded) {
+                    cout << "  *** REORDER ALERT: Stock has dropped to reorder level! ***\n";
+                }
+            }
+
+        } else if (choice == 3) {
+            // --- Update Price ---
+            cout << "  Enter new unit price (KES): ";
+            cin >> newPrice;
+
+            if (newPrice <= 0) {
+                cout << "  [ERROR] Price must be positive.\n";
+            } else {
+                unitPrice = newPrice;
+                computeMetrics();
+                cout << "  [OK] Unit price updated to KES " << fixed << setprecision(2) << unitPrice << "\n";
+            }
+
+        } else if (choice == 4) {
+            // --- View Dashboard ---
+            displayDashboard();
+
+        } else if (choice == 5) {
+            // --- Exit ---
+            running = false;
+
+        } else {
+            cout << "  [ERROR] Invalid choice. Please select 1-5.\n";
+        }
+    }
 }
